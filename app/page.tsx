@@ -234,11 +234,8 @@ export default function HornosPage() {
                     <div className="flex items-center gap-3">
                         <img src="/images/logo-fq.png" alt="FQ Logo" className="w-10 h-10 rounded-full object-contain" style={{ background: 'transparent' }} />
                         <div>
-                            <p className="text-[10px] font-extrabold uppercase tracking-widest leading-none"
-                                style={{ color: 'var(--color-brand)' }}>CUMARU</p>
-                            <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-timber-grey)' }}>
-                                Control de Hornos de Secado
-                            </p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest leading-none"
+                                style={{ color: 'var(--color-brand)' }}>TID - Control de Hornos</p>
                         </div>
                     </div>
                 </div>
@@ -275,7 +272,7 @@ export default function HornosPage() {
                     style={{ background: 'var(--color-brand)', boxShadow: 'var(--shadow-header)' }}>
                     <img src="/images/logo-fq.png" alt="FQ" className="w-8 h-8 rounded-full object-contain shrink-0" style={{ background: 'white' }} />
                     <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest leading-none">CUMARU</p>
+                        <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest leading-none">TID - Control de Hornos</p>
                         <p className="text-[15px] font-bold leading-tight">{TITLES[activeTab].title}</p>
                     </div>
                 </header>
@@ -308,10 +305,21 @@ export default function HornosPage() {
                                 te gustaría realizar hoy?
                             </h2>
 
-                            {/* Icon */}
-                            <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center mt-8 mb-6"
-                                style={{ background: 'var(--color-brand)', boxShadow: '0 8px 30px rgba(5,123,87,0.25)' }}>
-                                <Activity size={30} className="text-white" />
+                            {/* Pulsing icon */}
+                            <div className="relative flex items-center justify-center mt-8 mb-6" style={{ width: 80, height: 80 }}>
+                                <span className="absolute inset-0 rounded-full" style={{
+                                    background: '#057b57',
+                                    animation: 'pulse-ring 1.8s cubic-bezier(0.215,0.61,0.355,1) infinite',
+                                    opacity: 0.4,
+                                }} />
+                                <div className="relative z-10 flex items-center justify-center rounded-full text-white w-full h-full"
+                                    style={{
+                                        background: 'var(--color-brand)',
+                                        boxShadow: 'var(--shadow-fab)',
+                                        animation: 'pulse-scale 2.4s ease-in-out infinite',
+                                    }}>
+                                    <Activity size={30} />
+                                </div>
                             </div>
 
                             {/* Action buttons */}
@@ -354,12 +362,6 @@ export default function HornosPage() {
                         <div style={{ animation: 'var(--animate-fade-in)' }}>
                             <div className="bg-white rounded-card mb-5 overflow-hidden"
                                 style={{ boxShadow: 'var(--shadow-card)' }}>
-                                <div className="px-5 py-4 border-b border-gray-100">
-                                    <h2 className="text-[15px] font-bold m-0">Configuración de Hornos</h2>
-                                    <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-timber-grey)' }}>
-                                        Ingrese las fechas de cada horno activo
-                                    </p>
-                                </div>
                                 <div className="p-5">
                                     {/* Desktop table */}
                                     <div className="hidden md:block">
@@ -464,12 +466,6 @@ export default function HornosPage() {
                             {validKilns.length > 0 ? (
                                 <div className="bg-white rounded-card mb-5 overflow-hidden"
                                     style={{ boxShadow: 'var(--shadow-card)' }}>
-                                    <div className="px-5 py-4 border-b border-gray-100">
-                                        <h2 className="text-[15px] font-bold m-0">Diagrama Gantt</h2>
-                                        <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-timber-grey)' }}>
-                                            Línea roja = Hoy · Barra tenue = días transcurridos · Barra sólida = días restantes
-                                        </p>
-                                    </div>
                                     <div className="p-5 overflow-x-auto">
                                         <GanttChart kilns={validKilns} />
                                     </div>
