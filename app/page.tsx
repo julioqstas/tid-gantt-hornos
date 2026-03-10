@@ -227,11 +227,16 @@ export default function HornosPage() {
             <aside className="hidden md:flex flex-col w-[220px] shrink-0 bg-white border-r border-gray-100"
                 style={{ boxShadow: 'var(--shadow-sidebar)' }}>
                 <div className="px-5 py-5 border-b border-gray-100">
-                    <p className="text-[10px] font-extrabold uppercase tracking-widest leading-none"
-                        style={{ color: 'var(--color-brand)' }}>CUMARU</p>
-                    <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-timber-grey)' }}>
-                        Control de Hornos de Secado
-                    </p>
+                    <div className="flex items-center gap-3">
+                        <img src="/images/logo-fq.png" alt="FQ Logo" className="w-10 h-10 rounded-full object-contain" style={{ background: 'transparent' }} />
+                        <div>
+                            <p className="text-[10px] font-extrabold uppercase tracking-widest leading-none"
+                                style={{ color: 'var(--color-brand)' }}>CUMARU</p>
+                            <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-timber-grey)' }}>
+                                Control de Hornos de Secado
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 <nav className="flex-1 py-3 px-2 overflow-y-auto">
                     <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
@@ -258,6 +263,7 @@ export default function HornosPage() {
                 {/* Mobile header */}
                 <header className="md:hidden text-white px-4 py-3 flex items-center gap-3 shrink-0"
                     style={{ background: 'var(--color-brand)', boxShadow: 'var(--shadow-header)' }}>
+                    <img src="/images/logo-fq.png" alt="FQ" className="w-8 h-8 rounded-full object-contain shrink-0" style={{ background: 'white' }} />
                     <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest leading-none">CUMARU</p>
                         <p className="text-[15px] font-bold leading-tight">Control de Hornos</p>
