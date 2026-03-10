@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Calendar, Activity } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import { Calendar, Activity, Home, Flame, BarChart3 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────
+type AppTab = 'inicio' | 'secados' | 'gantt';
+
 interface KilnData {
     id: string;
     code: string;
@@ -18,6 +20,19 @@ interface KilnCalc {
     start: Date;
     end: Date;
 }
+
+// ── Tab Definitions ────────────────────────────────────
+const TABS: { id: AppTab; label: string; icon: ReactNode }[] = [
+    { id: 'inicio', label: 'Inicio', icon: <Home size={22} /> },
+    { id: 'secados', label: 'Secados', icon: <Flame size={22} /> },
+    { id: 'gantt', label: 'Gráfico Gantt', icon: <Activity size={22} /> },
+];
+
+const TITLES: Record<AppTab, { title: string; sub: string }> = {
+    inicio: { title: 'Inicio', sub: 'Resumen ejecutivo del control de hornos' },
+    secados: { title: 'Configuración de Secados', sub: 'Ingrese las fechas de cada horno activo' },
+    gantt: { title: 'Gráfico Gantt', sub: 'Barra tenue = días transcurridos · Barra sólida = días restantes' },
+};
 
 // ── Helpers ────────────────────────────────────────────
 function parseDate(dateString: string): Date | null {
@@ -55,7 +70,6 @@ function GanttChart({ kilns }: { kilns: KilnCalc[] }) {
 
     const totalDays = daysBetween(minDate, maxDate);
 
-    // Grid lines + labels
     const gridItems: { left: number; label?: string; }[] = [];
     for (let i = 0; i <= totalDays; i++) {
         const d = new Date(minDate);
@@ -65,7 +79,6 @@ function GanttChart({ kilns }: { kilns: KilnCalc[] }) {
         gridItems.push({ left, label: showLabel ? `${d.getDate()}/${d.getMonth() + 1}` : undefined });
     }
 
-    // Today line
     const todayInRange = today >= minDate && today <= maxDate;
     const todayPct = todayInRange ? (daysBetween(minDate, today) / totalDays) * 100 : 0;
 
@@ -102,14 +115,11 @@ function GanttChart({ kilns }: { kilns: KilnCalc[] }) {
 
                 return (
                     <div key={kiln.id} className="flex items-center relative" style={{ height: 76, borderBottom: '1px solid #f1f5f9', zIndex: 10 }}>
-                        {/* Label */}
                         <div className="text-right font-bold" style={{ width: 80, paddingRight: 12, background: 'white', zIndex: 15, color: 'var(--color-brand)' }}>
                             {kiln.id}<br />
                             <span style={{ fontSize: '0.7em', fontWeight: 500, color: 'var(--color-timber-grey)' }}>{kiln.code}</span>
                         </div>
-                        {/* Track */}
                         <div className="flex-1 relative h-full flex items-center">
-                            {/* Start chip */}
                             <div className="absolute" style={{
                                 left: `${leftPct}%`, top: '50%',
                                 transform: 'translate(calc(-100% - 10px), -50%)',
@@ -120,7 +130,6 @@ function GanttChart({ kilns }: { kilns: KilnCalc[] }) {
                                 {formatDayName(kiln.start)} {formatDateShort(kiln.start)}
                             </div>
 
-                            {/* Bar */}
                             <div className="absolute flex" style={{
                                 left: `${leftPct}%`, width: `${widthPct}%`, height: 34,
                                 borderRadius: 8, overflow: 'visible', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
@@ -149,7 +158,6 @@ function GanttChart({ kilns }: { kilns: KilnCalc[] }) {
                                     </div>
                                 )}
 
-                                {/* Exit chip */}
                                 <div className="absolute" style={{
                                     right: -10, top: '50%', transform: 'translate(100%, -50%)',
                                     fontSize: 11, fontWeight: 600, color: 'var(--color-brand)',
@@ -192,7 +200,7 @@ const INITIAL_KILNS: KilnData[] = [
 
 export default function HornosPage() {
     const [kilns, setKilns] = useState<KilnData[]>(INITIAL_KILNS);
-    const [showGantt, setShowGantt] = useState(true);
+    const [activeTab, setActiveTab] = useState<AppTab>('inicio');
     const [dateStr, setDateStr] = useState('');
 
     useEffect(() => {
@@ -203,10 +211,6 @@ export default function HornosPage() {
 
     const updateKiln = useCallback((index: number, field: keyof KilnData, value: string | boolean) => {
         setKilns(prev => prev.map((k, i) => i === index ? { ...k, [field]: value } : k));
-    }, []);
-
-    const handleGenerate = useCallback(() => {
-        setShowGantt(true);
     }, []);
 
     // Compute valid kilns for Gantt
@@ -240,20 +244,26 @@ export default function HornosPage() {
                 </div>
                 <nav className="flex-1 py-3 px-2 overflow-y-auto">
                     <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2"
-                        style={{ color: 'var(--color-timber-grey)' }}>Estado</p>
-                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold"
+                        style={{ color: 'var(--color-timber-grey)' }}>Secciones</p>
+                    {TABS.map(tab => {
+                        const active = activeTab === tab.id;
+                        return (
+                            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all mb-0.5 cursor-pointer border-none"
+                                style={{ background: active ? 'var(--color-brand-light)' : 'transparent', color: active ? 'var(--color-brand)' : 'var(--color-timber-dark)', fontWeight: active ? 700 : 500 }}>
+                                <span style={{ color: active ? 'var(--color-brand)' : 'var(--color-timber-grey)' }}>{tab.icon}</span>
+                                <span className="text-[13px]">{tab.label}</span>
+                                {active && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-brand)' }} />}
+                            </button>
+                        );
+                    })}
+                </nav>
+                <div className="p-4 border-t border-gray-100">
+                    <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold"
                         style={{ background: 'var(--color-brand-light)', color: 'var(--color-brand)' }}>
                         <Calendar size={14} />
                         <span>{dateStr}</span>
                     </div>
-                </nav>
-                <div className="p-4 border-t border-gray-100">
-                    <button onClick={handleGenerate}
-                        className="w-full flex items-center justify-center gap-2 text-white text-[13px] font-bold py-3 rounded-xl transition-all cursor-pointer border-none active:scale-[0.97]"
-                        style={{ background: 'var(--color-brand)', boxShadow: 'var(--shadow-fab)' }}>
-                        <Activity size={16} />
-                        Generar Gráfico
-                    </button>
                 </div>
             </aside>
 
@@ -266,7 +276,7 @@ export default function HornosPage() {
                     <img src="/images/logo-fq.png" alt="FQ" className="w-8 h-8 rounded-full object-contain shrink-0" style={{ background: 'white' }} />
                     <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest leading-none">CUMARU</p>
-                        <p className="text-[15px] font-bold leading-tight">Control de Hornos</p>
+                        <p className="text-[15px] font-bold leading-tight">{TITLES[activeTab].title}</p>
                     </div>
                 </header>
 
@@ -274,11 +284,9 @@ export default function HornosPage() {
                 <div className="hidden md:flex items-center px-6 py-3.5 border-b border-gray-100 bg-white gap-4 shrink-0 min-h-[64px]">
                     <div className="flex-1 min-w-0">
                         <h1 className="text-[18px] font-extrabold tracking-tight" style={{ color: 'var(--color-timber-dark)' }}>
-                            Estado de Hornos
+                            {TITLES[activeTab].title}
                         </h1>
-                        <p className="text-[11px] font-medium" style={{ color: 'var(--color-timber-grey)' }}>
-                            Programación y seguimiento de secado en hornos
-                        </p>
+                        <p className="text-[11px] font-medium" style={{ color: 'var(--color-timber-grey)' }}>{TITLES[activeTab].sub}</p>
                     </div>
                     <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-[11px] font-semibold whitespace-nowrap"
                         style={{ borderColor: 'var(--color-brand)', color: 'var(--color-brand)' }}>
@@ -289,133 +297,250 @@ export default function HornosPage() {
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 md:p-6">
 
-                    {/* Form Card */}
-                    <div className="bg-white rounded-card mb-5 overflow-hidden"
-                        style={{ boxShadow: 'var(--shadow-card)', animation: 'var(--animate-fade-in)' }}>
-                        <div className="px-5 py-4 border-b border-gray-100">
-                            <h2 className="text-[15px] font-bold m-0">Configuración de Hornos</h2>
-                            <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-timber-grey)' }}>
-                                Ingrese las fechas de cada horno activo
-                            </p>
-                        </div>
-                        <div className="p-5">
-                            {/* Desktop table */}
-                            <div className="hidden md:block">
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        <tr>
-                                            <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
-                                                style={{ color: 'var(--color-timber-grey)', width: 50, textAlign: 'center' }}>Activo</th>
-                                            <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
-                                                style={{ color: 'var(--color-timber-grey)', width: 60 }}>Horno</th>
-                                            <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
-                                                style={{ color: 'var(--color-timber-grey)' }}>Código Secado</th>
-                                            <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
-                                                style={{ color: 'var(--color-timber-grey)' }}>Fecha Ingreso</th>
-                                            <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
-                                                style={{ color: 'var(--color-timber-grey)' }}>Fecha Fin Programada</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {kilns.map((k, i) => (
-                                            <tr key={k.id}>
-                                                <td className="py-2.5 px-2 border-b border-gray-50 text-center align-middle">
-                                                    <input type="checkbox" checked={k.active}
-                                                        onChange={e => updateKiln(i, 'active', e.target.checked)}
-                                                        className="w-[18px] h-[18px] rounded cursor-pointer"
-                                                        style={{ accentColor: 'var(--color-brand)' }} />
-                                                </td>
-                                                <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
-                                                    <span className="font-bold text-[14px]" style={{ color: 'var(--color-brand)' }}>{k.id}</span>
-                                                </td>
-                                                <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
-                                                    <input type="text" value={k.code}
-                                                        onChange={e => updateKiln(i, 'code', e.target.value)}
-                                                        className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-                                                </td>
-                                                <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
-                                                    <input type="date" value={k.startDate}
-                                                        onChange={e => updateKiln(i, 'startDate', e.target.value)}
-                                                        className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-                                                </td>
-                                                <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
-                                                    <input type="date" value={k.endDate}
-                                                        onChange={e => updateKiln(i, 'endDate', e.target.value)}
-                                                        className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                    {/* ═══ INICIO ═══ */}
+                    {activeTab === 'inicio' && (
+                        <div className="flex flex-col items-center justify-center text-center"
+                            style={{ minHeight: 'calc(100dvh - 200px)', animation: 'var(--animate-fade-in)' }}>
+                            <h2 className="text-[22px] md:text-[28px] font-extrabold leading-tight m-0"
+                                style={{ color: 'var(--color-timber-dark)' }}>
+                                ¿Qué operación de<br />
+                                <span style={{ color: 'var(--color-brand)' }}>Secado en Hornos</span><br />
+                                te gustaría realizar hoy?
+                            </h2>
+
+                            {/* Icon */}
+                            <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center mt-8 mb-6"
+                                style={{ background: 'var(--color-brand)', boxShadow: '0 8px 30px rgba(5,123,87,0.25)' }}>
+                                <Activity size={30} className="text-white" />
                             </div>
 
-                            {/* Mobile stacked form */}
-                            <div className="md:hidden">
-                                {kilns.map((k, i) => (
-                                    <div key={k.id} className="flex items-start gap-3 py-3.5 border-b border-gray-100 last:border-0">
-                                        <div className="w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-[14px] shrink-0"
-                                            style={{ background: k.active ? 'var(--color-brand-light)' : '#f1f5f9', color: k.active ? 'var(--color-brand)' : '#9ca3af' }}>
-                                            {k.id}
-                                        </div>
-                                        <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
-                                            <div className="col-span-2">
-                                                <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5"
-                                                    style={{ color: 'var(--color-timber-grey)' }}>Código</div>
-                                                <input type="text" value={k.code}
-                                                    onChange={e => updateKiln(i, 'code', e.target.value)}
-                                                    className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand transition-all" />
-                                            </div>
-                                            <div>
-                                                <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5"
-                                                    style={{ color: 'var(--color-timber-grey)' }}>Ingreso</div>
-                                                <input type="date" value={k.startDate}
-                                                    onChange={e => updateKiln(i, 'startDate', e.target.value)}
-                                                    className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand transition-all" />
-                                            </div>
-                                            <div>
-                                                <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5"
-                                                    style={{ color: 'var(--color-timber-grey)' }}>Fin Prog.</div>
-                                                <input type="date" value={k.endDate}
-                                                    onChange={e => updateKiln(i, 'endDate', e.target.value)}
-                                                    className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand transition-all" />
-                                            </div>
-                                        </div>
+                            {/* Action buttons */}
+                            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                                <button onClick={() => setActiveTab('secados')}
+                                    className="flex-1 flex flex-col items-center gap-2 py-6 px-5 bg-white rounded-2xl border border-gray-100 cursor-pointer transition-all hover:border-brand/30 hover:shadow-lg active:scale-[0.97]"
+                                    style={{ boxShadow: 'var(--shadow-card)' }}>
+                                    <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                                        style={{ background: 'var(--color-brand-light)' }}>
+                                        <Flame size={22} style={{ color: 'var(--color-brand)' }} />
                                     </div>
-                                ))}
-                                <button onClick={handleGenerate}
-                                    className="w-full mt-2 py-3.5 text-white text-[14px] font-bold rounded-xl border-none cursor-pointer active:scale-[0.97] transition-all"
-                                    style={{ background: 'var(--color-brand)', boxShadow: 'var(--shadow-fab)' }}>
-                                    Generar Gráfico
+                                    <span className="text-[14px] font-bold" style={{ color: 'var(--color-timber-dark)' }}>
+                                        Configurar Secados
+                                    </span>
+                                    <span className="text-[11px] font-medium" style={{ color: 'var(--color-timber-grey)' }}>
+                                        Ingrese fechas de hornos
+                                    </span>
+                                </button>
+
+                                <button onClick={() => setActiveTab('gantt')}
+                                    className="flex-1 flex flex-col items-center gap-2 py-6 px-5 bg-white rounded-2xl border border-gray-100 cursor-pointer transition-all hover:border-brand/30 hover:shadow-lg active:scale-[0.97]"
+                                    style={{ boxShadow: 'var(--shadow-card)' }}>
+                                    <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                                        style={{ background: 'var(--color-brand-light)' }}>
+                                        <BarChart3 size={22} style={{ color: 'var(--color-brand)' }} />
+                                    </div>
+                                    <span className="text-[14px] font-bold" style={{ color: 'var(--color-timber-dark)' }}>
+                                        Ver Gráfico Gantt
+                                    </span>
+                                    <span className="text-[11px] font-medium" style={{ color: 'var(--color-timber-grey)' }}>
+                                        Diagrama de programación
+                                    </span>
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Gantt Card */}
-                    {showGantt && validKilns.length > 0 && (
-                        <div className="bg-white rounded-card mb-5 overflow-hidden"
-                            style={{ boxShadow: 'var(--shadow-card)', animation: 'var(--animate-fade-in)' }}>
-                            <div className="px-5 py-4 border-b border-gray-100">
-                                <h2 className="text-[15px] font-bold m-0">Diagrama Gantt</h2>
-                                <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-timber-grey)' }}>
-                                    Línea roja = Hoy · Barra tenue = días transcurridos · Barra sólida = días restantes
-                                </p>
+                    {/* ═══ SECADOS ═══ */}
+                    {activeTab === 'secados' && (
+                        <div style={{ animation: 'var(--animate-fade-in)' }}>
+                            <div className="bg-white rounded-card mb-5 overflow-hidden"
+                                style={{ boxShadow: 'var(--shadow-card)' }}>
+                                <div className="px-5 py-4 border-b border-gray-100">
+                                    <h2 className="text-[15px] font-bold m-0">Configuración de Hornos</h2>
+                                    <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-timber-grey)' }}>
+                                        Ingrese las fechas de cada horno activo
+                                    </p>
+                                </div>
+                                <div className="p-5">
+                                    {/* Desktop table */}
+                                    <div className="hidden md:block">
+                                        <table className="w-full border-collapse">
+                                            <thead>
+                                                <tr>
+                                                    <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
+                                                        style={{ color: 'var(--color-timber-grey)', width: 50, textAlign: 'center' }}>Activo</th>
+                                                    <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
+                                                        style={{ color: 'var(--color-timber-grey)', width: 60 }}>Horno</th>
+                                                    <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
+                                                        style={{ color: 'var(--color-timber-grey)' }}>Código Secado</th>
+                                                    <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
+                                                        style={{ color: 'var(--color-timber-grey)' }}>Fecha Ingreso</th>
+                                                    <th className="text-left pb-2.5 px-2 text-[10px] font-bold uppercase tracking-wider border-b border-gray-100"
+                                                        style={{ color: 'var(--color-timber-grey)' }}>Fecha Fin Programada</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {kilns.map((k, i) => (
+                                                    <tr key={k.id}>
+                                                        <td className="py-2.5 px-2 border-b border-gray-50 text-center align-middle">
+                                                            <input type="checkbox" checked={k.active}
+                                                                onChange={e => updateKiln(i, 'active', e.target.checked)}
+                                                                className="w-[18px] h-[18px] rounded cursor-pointer"
+                                                                style={{ accentColor: 'var(--color-brand)' }} />
+                                                        </td>
+                                                        <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
+                                                            <span className="font-bold text-[14px]" style={{ color: 'var(--color-brand)' }}>{k.id}</span>
+                                                        </td>
+                                                        <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
+                                                            <input type="text" value={k.code}
+                                                                onChange={e => updateKiln(i, 'code', e.target.value)}
+                                                                className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+                                                        </td>
+                                                        <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
+                                                            <input type="date" value={k.startDate}
+                                                                onChange={e => updateKiln(i, 'startDate', e.target.value)}
+                                                                className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+                                                        </td>
+                                                        <td className="py-2.5 px-2 border-b border-gray-50 align-middle">
+                                                            <input type="date" value={k.endDate}
+                                                                onChange={e => updateKiln(i, 'endDate', e.target.value)}
+                                                                className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Mobile stacked form */}
+                                    <div className="md:hidden">
+                                        {kilns.map((k, i) => (
+                                            <div key={k.id} className="flex items-start gap-3 py-3.5 border-b border-gray-100 last:border-0">
+                                                <div className="w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-[14px] shrink-0"
+                                                    style={{ background: k.active ? 'var(--color-brand-light)' : '#f1f5f9', color: k.active ? 'var(--color-brand)' : '#9ca3af' }}>
+                                                    {k.id}
+                                                </div>
+                                                <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
+                                                    <div className="col-span-2">
+                                                        <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5"
+                                                            style={{ color: 'var(--color-timber-grey)' }}>Código</div>
+                                                        <input type="text" value={k.code}
+                                                            onChange={e => updateKiln(i, 'code', e.target.value)}
+                                                            className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5"
+                                                            style={{ color: 'var(--color-timber-grey)' }}>Ingreso</div>
+                                                        <input type="date" value={k.startDate}
+                                                            onChange={e => updateKiln(i, 'startDate', e.target.value)}
+                                                            className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand transition-all" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5"
+                                                            style={{ color: 'var(--color-timber-grey)' }}>Fin Prog.</div>
+                                                        <input type="date" value={k.endDate}
+                                                            onChange={e => updateKiln(i, 'endDate', e.target.value)}
+                                                            className="w-full py-2 px-3 border border-gray-200 rounded-xl text-[13px] outline-none focus:border-brand transition-all" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="p-5 overflow-x-auto">
-                                <GanttChart kilns={validKilns} />
-                            </div>
+
+                            {/* CTA button to go to Gantt */}
+                            <button onClick={() => setActiveTab('gantt')}
+                                className="w-full md:w-auto flex items-center justify-center gap-2 text-white text-[14px] font-bold py-3.5 px-8 rounded-xl transition-all cursor-pointer border-none active:scale-[0.97]"
+                                style={{ background: 'var(--color-brand)', boxShadow: 'var(--shadow-fab)' }}>
+                                <Activity size={18} />
+                                Ver Gráfico Gantt
+                            </button>
                         </div>
                     )}
+
+                    {/* ═══ GRÁFICO GANTT ═══ */}
+                    {activeTab === 'gantt' && (
+                        <div style={{ animation: 'var(--animate-fade-in)' }}>
+                            {validKilns.length > 0 ? (
+                                <div className="bg-white rounded-card mb-5 overflow-hidden"
+                                    style={{ boxShadow: 'var(--shadow-card)' }}>
+                                    <div className="px-5 py-4 border-b border-gray-100">
+                                        <h2 className="text-[15px] font-bold m-0">Diagrama Gantt</h2>
+                                        <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-timber-grey)' }}>
+                                            Línea roja = Hoy · Barra tenue = días transcurridos · Barra sólida = días restantes
+                                        </p>
+                                    </div>
+                                    <div className="p-5 overflow-x-auto">
+                                        <GanttChart kilns={validKilns} />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center py-20"
+                                    style={{ animation: 'var(--animate-fade-in)' }}>
+                                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                                        style={{ background: '#f1f5f9' }}>
+                                        <Activity size={28} style={{ color: '#94a3b8' }} />
+                                    </div>
+                                    <p className="text-[16px] font-bold mb-1" style={{ color: 'var(--color-timber-dark)' }}>
+                                        No hay hornos activos
+                                    </p>
+                                    <p className="text-[13px] mb-5" style={{ color: 'var(--color-timber-grey)' }}>
+                                        Configure al menos un horno con fechas válidas
+                                    </p>
+                                    <button onClick={() => setActiveTab('secados')}
+                                        className="flex items-center gap-2 text-white text-[13px] font-bold py-3 px-6 rounded-xl transition-all cursor-pointer border-none active:scale-[0.97]"
+                                        style={{ background: 'var(--color-brand)', boxShadow: 'var(--shadow-fab)' }}>
+                                        <Flame size={16} />
+                                        Configurar Secados
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                 </div>
 
-                {/* Mobile dock */}
-                <div className="md:hidden flex items-center justify-center gap-2 bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-2 shrink-0"
+                {/* ── Bottom dock mobile ── */}
+                <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 px-1 pt-1.5 flex items-end justify-around shrink-0"
                     style={{ boxShadow: 'var(--shadow-dock)', paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-semibold"
-                        style={{ background: 'var(--color-brand-light)', color: 'var(--color-brand)' }}>
-                        <Calendar size={14} />
-                        <span>{dateStr}</span>
+
+                    {/* Inicio */}
+                    <button onClick={() => setActiveTab('inicio')}
+                        className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl min-w-[56px] border-none cursor-pointer transition-all bg-transparent"
+                        style={{ color: activeTab === 'inicio' ? 'var(--color-brand)' : '#9ca3af' }}>
+                        <span className={`transition-transform ${activeTab === 'inicio' ? 'scale-110' : ''}`}>
+                            <Home size={22} />
+                        </span>
+                        <span className="text-[9px] font-semibold leading-tight">Inicio</span>
+                        {activeTab === 'inicio' && <div className="w-3.5 h-0.5 rounded-full" style={{ background: 'var(--color-brand)' }} />}
+                    </button>
+
+                    {/* FAB — Gráfico Gantt */}
+                    <div className="flex flex-col items-center -mt-5">
+                        <button onClick={() => setActiveTab('gantt')}
+                            className="w-[54px] h-[54px] rounded-full text-white flex items-center justify-center border-none cursor-pointer active:scale-95 transition-all"
+                            style={{
+                                background: activeTab === 'gantt' ? 'var(--color-brand)' : 'var(--color-brand)',
+                                boxShadow: 'var(--shadow-fab)',
+                                opacity: activeTab === 'gantt' ? 1 : 0.85,
+                            }}
+                            aria-label="Gráfico Gantt">
+                            <Activity size={22} />
+                        </button>
+                        <span className="text-[9px] font-bold mt-0.5" style={{ color: 'var(--color-brand)' }}>Gantt</span>
                     </div>
+
+                    {/* Secados */}
+                    <button onClick={() => setActiveTab('secados')}
+                        className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl min-w-[56px] border-none cursor-pointer transition-all bg-transparent"
+                        style={{ color: activeTab === 'secados' ? 'var(--color-brand)' : '#9ca3af' }}>
+                        <span className={`transition-transform ${activeTab === 'secados' ? 'scale-110' : ''}`}>
+                            <Flame size={22} />
+                        </span>
+                        <span className="text-[9px] font-semibold leading-tight">Secados</span>
+                        {activeTab === 'secados' && <div className="w-3.5 h-0.5 rounded-full" style={{ background: 'var(--color-brand)' }} />}
+                    </button>
+
                 </div>
 
             </div>
